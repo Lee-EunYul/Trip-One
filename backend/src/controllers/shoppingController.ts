@@ -7,15 +7,19 @@ export const shoppingController = {
   getRecommendations: async (req: Request, res: Response) => {
     try {
       const { tripId } = req.params;
+      console.log(`[SHOPPING] 추천 요청: tripId=${tripId}`);
 
       // Trip 정보 조회
       const profile = tripService.getProfile(tripId);
       if (!profile) {
+        console.log(`[SHOPPING] 프로필을 찾을 수 없음: ${tripId}`);
         return res.status(404).json({
           code: 'NOT_FOUND',
           message: 'Trip profile not found',
         });
       }
+
+      console.log(`[SHOPPING] 프로필 found: city=${profile.city}, budget=${profile.budget}, styles=${JSON.stringify(profile.styles)}`);
 
       // 쇼핑 추천 생성
       const recommendations = await shoppingService.getRecommendations(
@@ -25,12 +29,14 @@ export const shoppingController = {
         profile.styles
       );
 
+      console.log(`[SHOPPING] 상품 ${recommendations.recommendedProducts.length}개 추천`);
+
       return res.status(200).json({
         code: 'SUCCESS',
         data: recommendations,
       });
     } catch (error) {
-      console.error('쇼핑 추천 조회 실패:', error);
+      console.error('[SHOPPING] 쇼핑 추천 조회 실패:', error);
       return res.status(500).json({
         code: 'INTERNAL_SERVER_ERROR',
         message: (error as Error).message,
