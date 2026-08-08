@@ -84,3 +84,9 @@ export interface TravelPhrase {
   pronunciation: string;
   example: string;
 }
+
+// 여행 도우미 - 응답
+export interface TravelHelperResponse {
+  phrases: TravelPhrase[];
+  categoryCount: Record<string, number>;
+}

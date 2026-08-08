@@ -9,7 +9,7 @@ export const shoppingController = {
       const { tripId } = req.params;
 
       // Trip 정보 조회
-      const profile = tripService.getTravelProfile(tripId);
+      const profile = tripService.getProfile(tripId);
       if (!profile) {
         return res.status(404).json({
           code: 'NOT_FOUND',

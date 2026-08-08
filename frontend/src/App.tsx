@@ -21,7 +21,7 @@ function AppContent() {
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [shoppingRecommendation, setShoppingRecommendation] = useState<ShoppingRecommendation | null>(null);
   const [loading, setLoading] = useState(false);
-  const [tripId] = useState('trip_' + Date.now());
+  const [tripId, setTripId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -56,15 +56,19 @@ function AppContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ tripId, ...profile }),
+        body: JSON.stringify(profile),
       });
 
       if (!profileResponse.ok) {
         throw new Error('프로필 저장 실패');
       }
 
+      const profileData = await profileResponse.json();
+      const savedTripId = profileData.data.id; // 생성된 프로필 ID를 받음
+      setTripId(savedTripId);
+
       // 2. 항공편 정보 저장
-      const flightResponse = await fetch(`http://localhost:3000/api/trips/${tripId}/flight-info`, {
+      const flightResponse = await fetch(`http://localhost:3000/api/trips/${savedTripId}/flight-info`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -77,7 +81,7 @@ function AppContent() {
       }
 
       // 3. 일정 생성
-      const response = await fetch(`http://localhost:3000/api/trips/${tripId}/plan/generate`, {
+      const response = await fetch(`http://localhost:3000/api/trips/${savedTripId}/plan/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,8 +114,8 @@ function AppContent() {
   };
 
   const handleViewShopping = async () => {
-    if (!profile) {
-      alert('프로필 정보가 필요합니다.');
+    if (!profile || !tripId) {
+      alert('프로필 정보와 여행 ID가 필요합니다.');
       return;
     }
 

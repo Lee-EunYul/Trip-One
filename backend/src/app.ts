@@ -53,10 +53,12 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // 서버 시작
 const startServer = async () => {
   try {
-    await connectDB();
+    // 임시: MongoDB 연결 비활성화 (메모리 저장소 사용 중)
+    // await connectDB();
+    
     app.listen(PORT, () => {
       console.log(`✅ Trip One API Server running on http://localhost:${PORT}`);
-      console.log(`📝 API Documentation: http://localhost:${PORT}/api/docs`);
+      console.log(`📝 (메모리 저장소 사용 중 - 데이터는 재시작 시 소실됩니다)`);
     });
   } catch (error) {
     console.error('❌ 서버 시작 실패:', error);

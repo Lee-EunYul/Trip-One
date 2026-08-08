@@ -27,7 +27,7 @@ export const authController = {
         return;
       }
 
-      const response = await authService.signUp({
+      const response = authService.signUp({
         email,
         password,
         name,
@@ -63,7 +63,7 @@ export const authController = {
         return;
       }
 
-      const response = await authService.signIn({
+      const response = authService.signIn({
         email,
         password,
       });
@@ -97,7 +97,7 @@ export const authController = {
         return;
       }
 
-      const user = await authService.getUserFromToken(token);
+      const user = authService.getUserFromToken(token);
 
       if (!user) {
         res.status(401).json({

@@ -1,8 +1,10 @@
 import * as crypto from 'crypto';
-import { SignUpRequest, SignInRequest, AuthResponse } from '../types.js';
-import { User as UserModel } from '../models/User.js';
+import { SignUpRequest, SignInRequest, AuthResponse, User } from '../types.js';
+import { v4 as uuidv4 } from 'uuid';
 
-// 간단한 비밀번호 해싱 (실제 프로덕션에서는 bcrypt 권장)
+// 임시: 메모리 저장소 (MongoDB 설정 후 대체)
+const users = new Map<string, User>();
+
 const hashPassword = (password: string): string => {
   return crypto
     .createHash('sha256')
@@ -14,14 +16,13 @@ const verifyPassword = (password: string, hash: string): boolean => {
   return hashPassword(password) === hash;
 };
 
-// 간단한 JWT 토큰 생성 (실제는 jsonwebtoken 라이브러리 권장)
 const generateToken = (userId: string): string => {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
   const payload = Buffer.from(
     JSON.stringify({
       sub: userId,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7일
+      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
     })
   ).toString('base64');
   
@@ -34,31 +35,33 @@ const generateToken = (userId: string): string => {
 };
 
 export const authService = {
-  // 회원가입
-  signUp: async (req: SignUpRequest): Promise<AuthResponse> => {
+  signUp: (req: SignUpRequest): AuthResponse => {
     try {
-      // 이메일 중복 확인
-      const existingUser = await UserModel.findOne({ email: req.email });
+      const existingUser = Array.from(users.values()).find(u => u.email === req.email);
       if (existingUser) {
         throw new Error('이미 존재하는 이메일입니다');
       }
 
-      // 새 사용자 생성
-      const user = new UserModel({
+      const userId = uuidv4();
+      const now = new Date().toISOString();
+      const user: User = {
+        id: userId,
         email: req.email,
         password: hashPassword(req.password),
         name: req.name,
-      });
+        createdAt: now,
+        updatedAt: now,
+      };
 
-      await user.save();
-      const token = generateToken(user._id.toString());
+      users.set(userId, user);
+      const token = generateToken(userId);
 
-      console.log(`✅ 회원가입 성공: ${req.email}`);
+      console.log(`✅ 회원가입: ${req.email}`);
 
       return {
         token,
         user: {
-          id: user._id.toString(),
+          id: userId,
           email: user.email,
           name: user.name,
         },
@@ -69,10 +72,9 @@ export const authService = {
     }
   },
 
-  // 로그인
-  signIn: async (req: SignInRequest): Promise<AuthResponse> => {
+  signIn: (req: SignInRequest): AuthResponse => {
     try {
-      const user = await UserModel.findOne({ email: req.email });
+      const user = Array.from(users.values()).find(u => u.email === req.email);
 
       if (!user) {
         throw new Error('이메일 또는 비밀번호가 잘못되었습니다');
@@ -82,14 +84,14 @@ export const authService = {
         throw new Error('이메일 또는 비밀번호가 잘못되었습니다');
       }
 
-      const token = generateToken(user._id.toString());
+      const token = generateToken(user.id);
 
-      console.log(`✅ 로그인 성공: ${req.email}`);
+      console.log(`✅ 로그인: ${req.email}`);
 
       return {
         token,
         user: {
-          id: user._id.toString(),
+          id: user.id,
           email: user.email,
           name: user.name,
         },
@@ -100,10 +102,8 @@ export const authService = {
     }
   },
 
-  // 토큰으로 사용자 조회
-  getUserFromToken: async (token: string) => {
+  getUserFromToken: (token: string) => {
     try {
-      // 간단한 토큰 검증 (실제는 jsonwebtoken 라이브러리 사용)
       const parts = token.split('.');
       if (parts.length !== 3) return null;
 
@@ -112,19 +112,13 @@ export const authService = {
       );
 
       if (payload.exp < Math.floor(Date.now() / 1000)) {
-        return null; // 토큰 만료
+        return null;
       }
 
-      const user = await UserModel.findById(payload.sub);
-      if (!user) return null;
-
-      return {
-        id: user._id.toString(),
-        email: user.email,
-        name: user.name,
-      };
+      const user = users.get(payload.sub);
+      return user || null;
     } catch (error) {
-      console.error('토큰 검증 오류:', error);
+      console.error('토큰 오류:', error);
       return null;
     }
   },

@@ -6,6 +6,14 @@ import { itineraryService } from './itineraryService.js';
 export const tripProfiles = new Map<string, TravelProfile>();
 export const flightInfos = new Map<string, FlightInfo>();
 
+declare global {
+  namespace Express {
+    interface Multer {
+      File: any;
+    }
+  }
+}
+
 export const tripService = {
   // 여행 프로필 생성
   createProfile: (data: Omit<TravelProfile, 'id' | 'createdAt' | 'updatedAt'>): TravelProfile => {
