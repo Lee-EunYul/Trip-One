@@ -1,8 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { TravelProfile, FlightInfo } from '../types.js';
 import { itineraryService } from './itineraryService.js';
+// import TravelProfileModel from '../models/TravelProfile.js'; // DB 연결 후 활성화
+// import FlightInfoModel from '../models/FlightInfo.js'; // DB 연결 후 활성화
 
-// Mock 데이터 저장소 (실제로는 DB 사용)
+/**
+ * 🎯 저장소 전략:
+ * - 현재: 메모리 맵 (즉시 작동)
+ * - DB 연결 후: TravelProfileModel.create() / FlightInfoModel.create() 로 변경
+ */
 export const tripProfiles = new Map<string, TravelProfile>();
 export const flightInfos = new Map<string, FlightInfo>();
 

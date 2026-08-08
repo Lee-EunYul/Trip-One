@@ -1,8 +1,14 @@
 import * as crypto from 'crypto';
 import { SignUpRequest, SignInRequest, AuthResponse, User } from '../types.js';
 import { v4 as uuidv4 } from 'uuid';
+// import UserModel from '../models/User.js'; // DB 연결 후 활성화
 
-// 임시: 메모리 저장소 (MongoDB 설정 후 대체)
+/**
+ * 📌 저장소 전략:
+ * - 현재: 메모리 맵 (즉시 작동)
+ * - DB 연결 후: UserModel.create() / UserModel.findById() 로 변경
+ * - 로직은 동일하게 유지
+ */
 const users = new Map<string, User>();
 
 const hashPassword = (password: string): string => {
@@ -54,6 +60,7 @@ export const authService = {
       };
 
       users.set(userId, user);
+      // DB 연결 후: await UserModel.create(user);
       const token = generateToken(userId);
 
       console.log(`✅ 회원가입: ${req.email}`);
@@ -74,6 +81,7 @@ export const authService = {
 
   signIn: (req: SignInRequest): AuthResponse => {
     try {
+      // DB 연결 후: const user = await UserModel.findOne({ email: req.email });
       const user = Array.from(users.values()).find(u => u.email === req.email);
 
       if (!user) {

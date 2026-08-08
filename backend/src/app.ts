@@ -5,9 +5,14 @@ import authRoutes from './routes/authRoutes.js';
 import shoppingRoutes from './routes/shoppingRoutes.js';
 import travelHelperRoutes from './routes/travelHelperRoutes.js';
 import { connectDB } from './config/db.js';
+import * as dotenv from 'dotenv';
+
+// .env 로드
+dotenv.config();
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODB_URI;
 
 // Middleware
 app.use(cors());
@@ -53,8 +58,14 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // 서버 시작
 const startServer = async () => {
   try {
-    // 임시: MongoDB 연결 비활성화 (메모리 저장소 사용 중)
-    // await connectDB();
+    // MongoDB 연결 (MONGODB_URI 가 있으면 활성화)
+    if (MONGODB_URI && MONGODB_URI !== 'mongodb+srv://username:password@cluster.mongodb.net/trip-one?retryWrites=true&w=majority') {
+      console.log('🔌 MongoDB 연결 시도...');
+      await connectDB();
+      console.log('✅ MongoDB 연결 성공');
+    } else {
+      console.log('📝 (메모리 저장소 사용 중 - 데이터는 재시작 시 소실됩니다)');
+    }
     
     app.listen(PORT, () => {
       console.log(`✅ Trip One API Server running on http://localhost:${PORT}`);
