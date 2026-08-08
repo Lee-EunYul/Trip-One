@@ -4,9 +4,10 @@ import { Itinerary, ItineraryDay } from '../types/index';
 interface ItineraryViewProps {
   itinerary: Itinerary;
   onBackClick: () => void;
+  onShoppingClick?: () => void;
 }
 
-export const ItineraryView: React.FC<ItineraryViewProps> = ({ itinerary, onBackClick }) => {
+export const ItineraryView: React.FC<ItineraryViewProps> = ({ itinerary, onBackClick, onShoppingClick }) => {
   const [expandedDay, setExpandedDay] = React.useState<number | null>(0);
 
   return (
@@ -147,6 +148,14 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({ itinerary, onBackC
           >
             일정 수정하기
           </button>
+          {onShoppingClick && (
+            <button
+              onClick={onShoppingClick}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
+            >
+              🛍️ 스마트 쇼핑 보기
+            </button>
+          )}
           <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
             일정 저장하기 ✅
           </button>

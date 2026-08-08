@@ -80,3 +80,38 @@ export interface OcrResult {
     };
   };
 }
+
+// 쇼핑 상품
+export interface Product {
+  id: string;
+  name: string;
+  category: 'Fashion' | 'Electronics' | 'Beauty' | 'Souvenirs' | 'Food';
+  localPrice: number;
+  koreanWonEstimate: number;
+  localCurrency: string;
+  storeName: string;
+  taxFree: boolean;
+  description: string;
+  reason: string;
+}
+
+// 쇼핑 추천
+export interface ShoppingRecommendation {
+  tripId: string;
+  city: string;
+  budget: number;
+  recommendedProducts: Product[];
+  categoryBudget: {
+    [key: string]: number;
+  };
+  totalEstimatedKRW: number;
+  budgetRemaining: number;
+}
+
+// 환율 정보
+export interface ExchangeRate {
+  from: string;
+  to: string;
+  rate: number;
+  lastUpdated: string;
+}
