@@ -97,7 +97,7 @@ export const authController = {
         return;
       }
 
-      const user = authService.getUserFromToken(token);
+      const user = await authService.getUserFromToken(token);
 
       if (!user) {
         res.status(401).json({

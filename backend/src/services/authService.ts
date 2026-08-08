@@ -1,5 +1,6 @@
 import * as crypto from 'crypto';
-import { User, SignUpRequest, SignInRequest, AuthResponse } from '../types.js';
+import { SignUpRequest, SignInRequest, AuthResponse } from '../types.js';
+import { User as UserModel } from '../models/User.js';
 
 // 간단한 비밀번호 해싱 (실제 프로덕션에서는 bcrypt 권장)
 const hashPassword = (password: string): string => {
@@ -32,77 +33,75 @@ const generateToken = (userId: string): string => {
   return `${header}.${payload}.${signature}`;
 };
 
-// Mock 사용자 저장소
-const users = new Map<string, User>();
-
 export const authService = {
   // 회원가입
   signUp: async (req: SignUpRequest): Promise<AuthResponse> => {
-    // 이메일 중복 확인
-    const existingUser = Array.from(users.values()).find(
-      (u) => u.email === req.email
-    );
-    if (existingUser) {
-      throw new Error('이미 존재하는 이메일입니다');
+    try {
+      // 이메일 중복 확인
+      const existingUser = await UserModel.findOne({ email: req.email });
+      if (existingUser) {
+        throw new Error('이미 존재하는 이메일입니다');
+      }
+
+      // 새 사용자 생성
+      const user = new UserModel({
+        email: req.email,
+        password: hashPassword(req.password),
+        name: req.name,
+      });
+
+      await user.save();
+      const token = generateToken(user._id.toString());
+
+      console.log(`✅ 회원가입 성공: ${req.email}`);
+
+      return {
+        token,
+        user: {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+        },
+      };
+    } catch (error) {
+      console.error('회원가입 오류:', error);
+      throw error;
     }
-
-    // 새 사용자 생성
-    const now = new Date().toISOString();
-    const userId = `user_${Date.now()}`;
-    const user: User = {
-      id: userId,
-      email: req.email,
-      password: hashPassword(req.password),
-      name: req.name,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    users.set(userId, user);
-    const token = generateToken(userId);
-
-    console.log(`✅ 회원가입 성공: ${req.email}`);
-
-    return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
-    };
   },
 
   // 로그인
   signIn: async (req: SignInRequest): Promise<AuthResponse> => {
-    const user = Array.from(users.values()).find(
-      (u) => u.email === req.email
-    );
+    try {
+      const user = await UserModel.findOne({ email: req.email });
 
-    if (!user) {
-      throw new Error('이메일 또는 비밀번호가 잘못되었습니다');
+      if (!user) {
+        throw new Error('이메일 또는 비밀번호가 잘못되었습니다');
+      }
+
+      if (!verifyPassword(req.password, user.password)) {
+        throw new Error('이메일 또는 비밀번호가 잘못되었습니다');
+      }
+
+      const token = generateToken(user._id.toString());
+
+      console.log(`✅ 로그인 성공: ${req.email}`);
+
+      return {
+        token,
+        user: {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+        },
+      };
+    } catch (error) {
+      console.error('로그인 오류:', error);
+      throw error;
     }
-
-    if (!verifyPassword(req.password, user.password)) {
-      throw new Error('이메일 또는 비밀번호가 잘못되었습니다');
-    }
-
-    const token = generateToken(user.id);
-
-    console.log(`✅ 로그인 성공: ${req.email}`);
-
-    return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
-    };
   },
 
   // 토큰으로 사용자 조회
-  getUserFromToken: (token: string): User | null => {
+  getUserFromToken: async (token: string) => {
     try {
       // 간단한 토큰 검증 (실제는 jsonwebtoken 라이브러리 사용)
       const parts = token.split('.');
@@ -116,9 +115,16 @@ export const authService = {
         return null; // 토큰 만료
       }
 
-      const user = users.get(payload.sub);
-      return user || null;
-    } catch {
+      const user = await UserModel.findById(payload.sub);
+      if (!user) return null;
+
+      return {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+      };
+    } catch (error) {
+      console.error('토큰 검증 오류:', error);
       return null;
     }
   },

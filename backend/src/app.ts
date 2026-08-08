@@ -4,6 +4,7 @@ import tripRoutes from './routes/tripRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import shoppingRoutes from './routes/shoppingRoutes.js';
 import travelHelperRoutes from './routes/travelHelperRoutes.js';
+import { connectDB } from './config/db.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -50,7 +51,17 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 // 서버 시작
-app.listen(PORT, () => {
-  console.log(`✅ Trip One API Server running on http://localhost:${PORT}`);
-  console.log(`📝 API Documentation: http://localhost:${PORT}/api/docs`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`✅ Trip One API Server running on http://localhost:${PORT}`);
+      console.log(`📝 API Documentation: http://localhost:${PORT}/api/docs`);
+    });
+  } catch (error) {
+    console.error('❌ 서버 시작 실패:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
