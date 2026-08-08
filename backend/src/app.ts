@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import tripRoutes from './routes/tripRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api', tripRoutes);
 
 // Health check

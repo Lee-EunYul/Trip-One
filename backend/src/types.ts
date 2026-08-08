@@ -1,3 +1,36 @@
+// 사용자 타입
+export interface User {
+  id: string;
+  email: string;
+  password: string; // 암호화됨
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 회원가입 요청
+export interface SignUpRequest {
+  email: string;
+  password: string;
+  name: string;
+}
+
+// 로그인 요청
+export interface SignInRequest {
+  email: string;
+  password: string;
+}
+
+// 인증 응답 (JWT 토큰 포함)
+export interface AuthResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}
+
 // 여행 프로필 타입 (백엔드)
 export interface TravelProfile {
   id: string;
