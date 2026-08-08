@@ -73,3 +73,14 @@ export interface ApiResponse<T> {
   message?: string;
   statusCode: number;
 }
+
+// 여행 도우미 - 회화 구문
+export interface TravelPhrase {
+  id: string;
+  category: string; // Greetings, Dining, Directions, Emergency, Shopping, Cultural
+  korean: string;
+  local: string;
+  localLang: string; // Japanese, French, English
+  pronunciation: string;
+  example: string;
+}

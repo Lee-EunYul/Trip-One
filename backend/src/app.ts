@@ -3,6 +3,7 @@ import cors from 'cors';
 import tripRoutes from './routes/tripRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import shoppingRoutes from './routes/shoppingRoutes.js';
+import travelHelperRoutes from './routes/travelHelperRoutes.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use('/api/auth', authRoutes);
 app.use('/api', tripRoutes);
 app.use('/api/shopping', shoppingRoutes);
+app.use('/api/travel-helper', travelHelperRoutes);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

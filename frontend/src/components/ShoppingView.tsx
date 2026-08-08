@@ -4,11 +4,13 @@ import { ShoppingRecommendation, Product, ExchangeRate } from '../types';
 interface ShoppingViewProps {
   recommendation: ShoppingRecommendation;
   onBackClick: () => void;
+  onTravelHelperClick?: () => void;
 }
 
 export const ShoppingView: React.FC<ShoppingViewProps> = ({
   recommendation,
   onBackClick,
+  onTravelHelperClick,
 }) => {
   const [shoppingList, setShoppingList] = useState<Set<string>>(new Set());
   const [exchangeRate, setExchangeRate] = useState<ExchangeRate | null>(null);
@@ -291,13 +293,21 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
       </div>
 
       {/* 하단 버튼 */}
-      <div className="max-w-5xl mx-auto px-4 mt-8 pb-8">
+      <div className="max-w-5xl mx-auto px-4 mt-8 pb-8 flex gap-4">
         <button
           onClick={onBackClick}
-          className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition"
+          className="flex-1 px-6 py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition"
         >
           ← 일정으로 돌아가기
         </button>
+        {onTravelHelperClick && (
+          <button
+            onClick={onTravelHelperClick}
+            className="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-lg font-bold text-lg hover:bg-indigo-700 transition"
+          >
+            🗣️ 여행 도우미 →
+          </button>
+        )}
       </div>
     </div>
   );

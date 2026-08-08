@@ -4,11 +4,12 @@ import { TravelProfileForm } from './components/TravelProfileForm';
 import { FlightOcrForm } from './components/FlightOcrForm';
 import { ItineraryView } from './components/ItineraryView';
 import { ShoppingView } from './components/ShoppingView';
+import { TravelHelperView } from './components/TravelHelperView';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
 
-type Step = 'profile' | 'flight' | 'preview' | 'itinerary' | 'shopping';
+type Step = 'profile' | 'flight' | 'preview' | 'itinerary' | 'shopping' | 'travel-helper';
 type AuthStep = 'signin' | 'signup' | null;
 
 function AppContent() {
@@ -147,6 +148,18 @@ function AppContent() {
   const handleBackFromShopping = () => {
     setShoppingRecommendation(null);
     setStep('itinerary');
+  };
+
+  const handleViewTravelHelper = () => {
+    if (!profile) {
+      alert('프로필 정보가 필요합니다.');
+      return;
+    }
+    setStep('travel-helper');
+  };
+
+  const handleBackFromTravelHelper = () => {
+    setStep('shopping');
   };
 
   if (authLoading) {
@@ -385,7 +398,11 @@ function AppContent() {
           )}
 
           {step === 'shopping' && shoppingRecommendation && (
-            <ShoppingView recommendation={shoppingRecommendation} onBackClick={handleBackFromShopping} />
+            <ShoppingView recommendation={shoppingRecommendation} onBackClick={handleBackFromShopping} onTravelHelperClick={handleViewTravelHelper} />
+          )}
+
+          {step === 'travel-helper' && profile && (
+            <TravelHelperView city={profile.city} onBackClick={handleBackFromTravelHelper} />
           )}
         </div>
       </div>
