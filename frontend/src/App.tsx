@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { TravelProfile, FlightInfo } from './types/index';
+import { TravelProfile, FlightInfo, Itinerary } from './types/index';
 import { TravelProfileForm } from './components/TravelProfileForm';
 import { FlightOcrForm } from './components/FlightOcrForm';
+import { ItineraryView } from './components/ItineraryView';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SignInPage } from './pages/SignInPage';
 import { SignUpPage } from './pages/SignUpPage';
 
-type Step = 'profile' | 'flight' | 'preview';
+type Step = 'profile' | 'flight' | 'preview' | 'itinerary';
 type AuthStep = 'signin' | 'signup' | null;
 
 function AppContent() {
@@ -15,6 +16,7 @@ function AppContent() {
   const [step, setStep] = useState<Step>('profile');
   const [profile, setProfile] = useState<TravelProfile | null>(null);
   const [flightInfo, setFlightInfo] = useState<FlightInfo | null>(null);
+  const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [loading, setLoading] = useState(false);
   const [tripId] = useState('trip_' + Date.now()); // Mock trip ID
 
@@ -37,10 +39,46 @@ function AppContent() {
     setStep('preview');
   };
 
-  const handleGenerateItinerary = () => {
-    if (profile && flightInfo) {
-      alert('일정이 생성되었습니다!\n지도와 추천 관광지는 다음 단계에서 표시됩니다.');
+  const handleGenerateItinerary = async () => {
+    if (!profile || !flightInfo) {
+      alert('프로필과 항공편 정보가 필요합니다.');
+      return;
     }
+
+    setLoading(true);
+
+    try {
+      // API 호출로 일정 생성
+      const response = await fetch(`http://localhost:3000/api/trips/${tripId}/plan/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('일정 생성 실패');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setItinerary(data.data);
+        setStep('itinerary');
+      } else {
+        alert('일정 생성 실패: ' + data.error);
+      }
+    } catch (error) {
+      console.error('일정 생성 중 오류:', error);
+      alert('일정 생성 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToPreview = () => {
+    setItinerary(null);
+    setStep('preview');
   };
 
   // 로딩 중
@@ -276,11 +314,27 @@ function AppContent() {
 
               <button
                 onClick={handleGenerateItinerary}
-                className="btn-primary w-full py-3 text-lg font-semibold"
+                disabled={loading}
+                className="btn-primary w-full py-3 text-lg font-semibold disabled:opacity-50"
               >
-                AI 일정 생성하기 ✨
+                {loading ? '일정 생성 중...' : 'AI 일정 생성하기 ✨'}
               </button>
             </div>
+          )}
+
+              {loading && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-8 text-center">
+                    <div className="animate-spin inline-block w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full mb-4"></div>
+                    <p className="text-gray-800">일정을 생성하는 중입니다...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 'itinerary' && itinerary && (
+            <ItineraryView itinerary={itinerary} onBackClick={handleBackToPreview} />
           )}
         </div>
       </div>
@@ -319,136 +373,6 @@ function App() {
 
 export default App;
 
-  const handleProfileNext = (newProfile: TravelProfile) => {
-    setProfile(newProfile);
-    setStep('flight');
-  };
-
-  const handleFlightVerified = (flight: FlightInfo) => {
-    setFlightInfo(flight);
-    setStep('preview');
-  };
-
-  const handleGenerateItinerary = () => {
-    if (profile && flightInfo) {
-      // API 호출로 일정 생성 (현재는 Mock)
-      alert('일정이 생성되었습니다!\n지도와 추천 관광지는 다음 단계에서 표시됩니다.');
-      // 실제로는 여기서 일정 페이지로 이동
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">✈️</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-800">Trip One</h1>
-          </div>
-          <div className="text-sm text-gray-600">
-            <button className="text-blue-600 hover:underline mr-4">이미 여행 중인가요?</button>
-            <button className="text-blue-600 hover:underline">로그인</button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* Step Indicator */}
-        <div className="flex justify-between items-center mb-12">
-          {[
-            { id: 'profile', label: 'Preferences', number: 1 },
-            { id: 'flight', label: 'Flights', number: 2 },
-            { id: 'preview', label: 'Preview', number: 3 },
-          ].map((s) => (
-            <div key={s.id} className="flex items-center flex-1">
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
-                  step === s.id || (step === 'preview' && s.id !== 'preview')
-                    ? 'bg-blue-600 text-white'
-                    : step === 'preview'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-600'
-                }`}
-              >
-                {s.number}
-              </div>
-              <p
-                className={`text-sm font-medium ml-2 ${
-                  step === s.id ? 'text-blue-600' : 'text-gray-600'
-                }`}
-              >
-                {s.label}
-              </p>
-              {s.id !== 'preview' && (
-                <div className={`flex-1 h-1 mx-4 ${step !== 'profile' ? 'bg-blue-600' : 'bg-gray-200'}`} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          {step === 'profile' && (
-            <div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                나만의 여행 프로필 만들기
-              </h2>
-              <p className="text-gray-600 mb-8">
-                여행지, 일정, 예산, 스타일을 입력하면 AI가 맞춤형 일정을 추천해드립니다.
-              </p>
-              <TravelProfileForm onNext={handleProfileNext} />
-            </div>
-          )}
-
-          {step === 'flight' && profile && (
-            <div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">항공권 등록</h2>
-              <p className="text-gray-600 mb-8">
-                항공권 이미지를 업로드하면 OCR이 자동으로 정보를 추출합니다.
-                <br />
-                정확한 도착/출국 시간으로 현실적인 일정을 추천해드립니다.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="md:col-span-2">
-                  <FlightOcrForm
-                    tripId={tripId}
-                    onVerified={handleFlightVerified}
-                    onLoading={setLoading}
-                  />
-                </div>
-
-                {/* Summary */}
-                <div className="card border-l-4 border-blue-600 h-fit">
-                  <h3 className="font-semibold text-gray-800 mb-4">프로필 요약</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li>
-                      <span className="text-gray-600">여행지:</span>
-                      <span className="font-medium ml-2">
-                        {profile.city}, {profile.country}
-                      </span>
-                    </li>
-                    <li>
-                      <span className="text-gray-600">일정:</span>
-                      <span className="font-medium ml-2">
-                        {profile.startDate} ~ {profile.endDate}
-                      </span>
-                    </li>
-                    <li>
-                      <span className="text-gray-600">예산:</span>
-                      <span className="font-medium ml-2">${profile.budget}</span>
-                    </li>
-                    <li>
-                      <span className="text-gray-600">스타일:</span>
-                      <span className="font-medium ml-2">{profile.styles.length}개</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
 
               {loading && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">

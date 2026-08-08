@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { TravelProfile, FlightInfo } from '../types.js';
+import { itineraryService } from './itineraryService.js';
 
 // Mock 데이터 저장소 (실제로는 DB 사용)
 export const tripProfiles = new Map<string, TravelProfile>();
@@ -88,32 +89,36 @@ export const tripService = {
       throw new Error('프로필 또는 항공편 정보가 없습니다.');
     }
 
-    // Mock 일정 생성
-    console.log(`📅 일정 생성: ${tripId}`);
-    return {
-      tripId,
-      days: [
-        {
-          day: 1,
-          title: `도착 & ${profile.city}`,
-          activities: [
-            { time: '18:00', activity: '공항 도착' },
-            { time: '19:00', activity: '숙소 체크인' },
-            { time: '20:00', activity: '저녁 식사 & 야경 명소' },
-          ],
-        },
-        {
-          day: 2,
-          title: `${profile.city} 핵심 관광`,
-          activities: [
-            { time: '09:00', activity: '관광지 1' },
-            { time: '12:00', activity: '점심' },
-            { time: '14:00', activity: '관광지 2' },
-          ],
-        },
-      ],
-      totalBudget: profile.budget,
-      estimatedSpend: Math.round(profile.budget * 0.8),
+    // 항공편 시간 포맷: "2024-10-22 12:45 PM" -> "12:45"
+    const parseFlightTime = (dateTime: string): string => {
+      const parts = dateTime.split(' ');
+      let time = parts[1]; // "12:45"
+      
+      if (parts[2] === 'PM' && !time.startsWith('12')) {
+        const [h, m] = time.split(':');
+        time = `${parseInt(h) + 12}:${m}`;
+      } else if (parts[2] === 'AM' && time.startsWith('12')) {
+        const [, m] = time.split(':');
+        time = `00:${m}`;
+      }
+      
+      return time;
     };
+
+    // 실제 일정 생성 (규칙 기반)
+    const itinerary = itineraryService.generateItinerary({
+      city: profile.city,
+      startDate: profile.startDate,
+      endDate: profile.endDate,
+      budget: profile.budget,
+      styles: profile.styles,
+      companionType: profile.companionType,
+      outboundDateTime: `${profile.startDate} ${parseFlightTime(flight.outboundDateTime)}`,
+      inboundDateTime: `${profile.endDate} ${parseFlightTime(flight.inboundDateTime)}`,
+    });
+
+    console.log(`📅 일정 생성 완료: ${tripId}`);
+    return itinerary;
   },
 };
+
